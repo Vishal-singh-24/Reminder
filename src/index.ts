@@ -1,53 +1,47 @@
+import { ReminderDatabase } from "./todo";
 import inquirer from "inquirer";
-import { addTask, listTasks, completeTask, deleteTask } from "./todo";
 
-// Function to Show the Main Menu
-const mainMenu = async () => {
+
+const db = new ReminderDatabase();
+
+async function mainMenu() {
   while (true) {
     const { action } = await inquirer.prompt([
       {
         type: "list",
         name: "action",
-        message: "📌 What do you want to do?",
-        choices: ["➕ Add Task", "📋 View Tasks", "✔️ Complete Task", "🗑️ Delete Task", "❌ Exit"],
+        message: "Choose an action:",
+        choices: ["Create", "View All", "View One", "Update", "Delete", "Exit"],
       },
     ]);
 
-    if (action === "➕ Add Task") {
-      const { title } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "title",
-          message: "Enter task title:",
-        },
+    if (action === "Create") {
+      const { id, title, description } = await inquirer.prompt([
+        { type: "input", name: "id", message: "Enter reminder ID:" },
+        { type: "input", name: "title", message: "Enter title:" },
+        { type: "input", name: "description", message: "Enter description (optional):" },
       ]);
-      addTask(title);
-    } else if (action === "📋 View Tasks") {
-      listTasks();
-    } else if (action === "✔️ Complete Task") {
-      const { id } = await inquirer.prompt([
-        {
-          type: "number",
-          name: "id",
-          message: "Enter task ID to mark as completed:",
-        },
+      db.createReminder(id, title, description);
+    } else if (action === "View All") {
+      console.log(db.getAllReminders());
+    } else if (action === "View One") {
+      const { id } = await inquirer.prompt([{ type: "input", name: "id", message: "Enter reminder ID:" }]);
+      console.log(db.getReminder(id));
+    } else if (action === "Update") {
+      const { id, title, description } = await inquirer.prompt([
+        { type: "input", name: "id", message: "Enter reminder ID:" },
+        { type: "input", name: "title", message: "Enter new title (leave blank to keep the same):" },
+        { type: "input", name: "description", message: "Enter new description (leave blank to keep the same):" },
       ]);
-      completeTask(id);
-    } else if (action === "🗑️ Delete Task") {
-      const { id } = await inquirer.prompt([
-        {
-          type: "number",
-          name: "id",
-          message: "Enter task ID to delete:",
-        },
-      ]);
-      deleteTask(id);
-    } else {
-      console.log("👋 Exiting...");
-      break;
+      db.updateReminder(id, title, description);
+    } else if (action === "Delete") {
+      const { id } = await inquirer.prompt([{ type: "input", name: "id", message: "Enter reminder ID:" }]);
+      db.removeReminder(id);
+    } else if (action === "Exit") {
+      console.log("Goodbye!");
+      process.exit();
     }
   }
-};
+}
 
-// Start the Application
 mainMenu();

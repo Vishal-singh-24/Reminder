@@ -1,77 +1,73 @@
-import fs from "fs";
+import * as fs from "fs";
 
-// Define Task Interface
-interface Task {
-  id: number;
+interface Reminder {
+  id: string;
   title: string;
-  completed: boolean;
+  description?: string;
+  date: string;
 }
 
-// JSON File Path
-const FILE_PATH = "./src/data.json";
+class ReminderDatabase {
+  private reminders: Reminder[] = [];
+  private filePath = "reminders.json";
 
-// Function to Load Tasks from JSON
-export const loadTasks = (): Task[] => {
-  try {
-    const data = fs.readFileSync(FILE_PATH, "utf8");
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
+  constructor() {
+    this.loadReminders();
   }
-};
 
-// Function to Save Tasks to JSON
-const saveTasks = (tasks: Task[]): void => {
-  fs.writeFileSync(FILE_PATH, JSON.stringify(tasks, null, 2));
-};
-
-// Function to Add a New Task
-export const addTask = (title: string): void => {
-  const tasks = loadTasks();
-  const newTask: Task = {
-    id: tasks.length ? tasks[tasks.length - 1].id + 1 : 1,
-    title,
-    completed: false,
-  };
-  tasks.push(newTask);
-  saveTasks(tasks);
-  console.log(`✅ Task "${title}" added successfully!`);
-};
-
-// Function to List All Tasks
-export const listTasks = (): void => {
-  const tasks = loadTasks();
-  if (tasks.length === 0) {
-    console.log("📂 No tasks found!");
-    return;
+  private loadReminders(): void {
+    if (fs.existsSync(this.filePath)) {
+      const data = fs.readFileSync(this.filePath, "utf-8");
+      this.reminders = JSON.parse(data);
+    }
   }
-  console.log("\n📌 To-Do List:");
-  tasks.forEach((task) => {
-    console.log(`${task.id}. ${task.completed ? "✔️" : "❌"} ${task.title}`);
-  });
-};
 
-// Function to Mark a Task as Completed
-export const completeTask = (id: number): void => {
-  const tasks = loadTasks();
-  const task = tasks.find((task) => task.id === id);
-  if (!task) {
-    console.log("⚠️ Task not found!");
-    return;
+  private saveReminders(): void {
+    fs.writeFileSync(this.filePath, JSON.stringify(this.reminders, null, 2));
   }
-  task.completed = true;
-  saveTasks(tasks);
-  console.log(`✅ Task "${task.title}" marked as completed!`);
-};
 
-// Function to Delete a Task
-export const deleteTask = (id: number): void => {
-  let tasks = loadTasks();
-  const updatedTasks = tasks.filter((task) => task.id !== id);
-  if (tasks.length === updatedTasks.length) {
-    console.log("⚠️ Task not found!");
-    return;
+  createReminder(id: string, title: string, description?: string, date?: string): void {
+    const newReminder: Reminder = {
+      id,
+      title,
+      description,
+      date: date || new Date().toISOString(),
+    };
+    this.reminders.push(newReminder);
+    this.saveReminders();
+    console.log("Reminder added successfully.");
   }
-  saveTasks(updatedTasks);
-  console.log(`🗑️ Task deleted successfully!`);
-};
+
+  exists(id: string): boolean {
+    return this.reminders.some((reminder) => reminder.id === id);
+  }
+
+  getAllReminders(): Reminder[] {
+    return this.reminders;
+  }
+
+  getReminder(id: string): Reminder | null {
+    return this.reminders.find((reminder) => reminder.id === id) || null;
+  }
+
+  removeReminder(id: string): void {
+    this.reminders = this.reminders.filter((reminder) => reminder.id !== id);
+    this.saveReminders();
+    console.log("Reminder deleted successfully.");
+  }
+
+  updateReminder(id: string, title?: string, description?: string, date?: string): void {
+    const reminder = this.getReminder(id);
+    if (reminder) {
+      if (title) reminder.title = title;
+      if (description) reminder.description = description;
+      if (date) reminder.date = date;
+      this.saveReminders();
+      console.log("Reminder updated successfully.");
+    } else {
+      console.log("Reminder not found.");
+    }
+  }
+}
+
+export { ReminderDatabase, Reminder };
